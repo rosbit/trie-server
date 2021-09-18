@@ -47,24 +47,20 @@ func (t *Trie) SimpleSearch(key string) map[string]*Occurring {
 	res := make(map[string]*Occurring)
 
 	buf := &bytes.Buffer{}
-	matchedStr := ""
 
 	for w := range parse(key) {
 		lw := strings.ToLower(w)
 		buf.WriteString(lw)
 		prefix := buf.String()
 		if t.t.HasKeysWithPrefix(prefix) {
-			matchedStr = prefix
+			setMeta(t.t, res, prefix)
 			continue
 		}
 
-		setMeta(t.t, res, matchedStr)
 		buf.Reset()
 		buf.WriteString(lw)
-		matchedStr = lw
 	}
 
-	setMeta(t.t, res, matchedStr)
 	return res
 }
 
@@ -72,7 +68,6 @@ func (t *Trie) Search(key string) map[string]*Occurring {
 	res := make(map[string]*Occurring)
 
 	buf := &bytes.Buffer{}
-	matchedStr := ""
 	words := NewWords(key)
 
 	for {
@@ -81,8 +76,6 @@ func (t *Trie) Search(key string) map[string]*Occurring {
 			break
 		}
 		if len(w) == 0 {
-			setMeta(t.t, res, matchedStr)
-			matchedStr = ""
 			buf.Reset()
 			words.Reset()
 			continue
@@ -91,17 +84,14 @@ func (t *Trie) Search(key string) map[string]*Occurring {
 		buf.WriteString(strings.ToLower(w))
 		prefix := buf.String()
 		if t.t.HasKeysWithPrefix(prefix) {
-			matchedStr = prefix
+			setMeta(t.t, res, prefix)
 			continue
 		}
 
-		setMeta(t.t, res, matchedStr)
-		matchedStr = ""
 		buf.Reset()
 		words.Reset()
 	}
 
-	setMeta(t.t, res, matchedStr)
 	return res
 }
 
@@ -122,22 +112,4 @@ func setMeta(t *gotrie.Trie, res map[string]*Occurring, matchedStr string) {
 		}
 	}
 }
-
-/*
-func (t *Trie) MaxPrefix(key string) string {
-	buf := &bytes.Buffer{}
-	matchedStr := ""
-
-	for _, c := range key {
-		buf.WriteRune(c)
-		prefix := buf.String()
-		if t.t.HasKeysWithPrefix(prefix) {
-			matchedStr = prefix
-			continue
-		}
-
-		break
-	}
-	return matchedStr
-}*/
 
