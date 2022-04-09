@@ -4,6 +4,7 @@ import (
 	gotrie "github.com/derekparker/trie"
 	"strings"
 	"bytes"
+	"sync"
 )
 
 type Occurring struct {
@@ -13,21 +14,31 @@ type Occurring struct {
 
 type Trie struct {
 	t *gotrie.Trie
+	l *sync.RWMutex
 }
 
 func NewTrie() *Trie {
-	return &Trie{t:gotrie.New()}
+	return &Trie{t:gotrie.New(), l:&sync.RWMutex{}}
 }
 
 func (t *Trie) Append(key string, meta interface{}) {
+	t.l.Lock()
+	defer t.l.Unlock()
+
 	t.t.Add(strings.ToLower(key), meta)
 }
 
 func (t *Trie) Remove(key string) {
+	t.l.Lock()
+	defer t.l.Unlock()
+
 	t.t.Remove(strings.ToLower(key))
 }
 
 func (t *Trie) Get(key string) (interface{}, bool) {
+	t.l.RLock()
+	defer t.l.RUnlock()
+
 	node, ok := t.t.Find(strings.ToLower(key))
 	if ok {
 		return node.Meta(), true
@@ -36,14 +47,23 @@ func (t *Trie) Get(key string) (interface{}, bool) {
 }
 
 func (t *Trie) PrefixSearch(key string) []string {
+	t.l.RLock()
+	defer t.l.RUnlock()
+
 	return t.t.PrefixSearch(key)
 }
 
 func (t *Trie) Clear() {
+	t.l.Lock()
+	defer t.l.Unlock()
+
 	t.t = gotrie.New()
 }
 
 func (t *Trie) SimpleSearch(key string) map[string]*Occurring {
+	t.l.RLock()
+	defer t.l.RUnlock()
+
 	res := make(map[string]*Occurring)
 
 	buf := &bytes.Buffer{}
@@ -65,6 +85,9 @@ func (t *Trie) SimpleSearch(key string) map[string]*Occurring {
 }
 
 func (t *Trie) Search(key string) map[string]*Occurring {
+	t.l.RLock()
+	defer t.l.RUnlock()
+
 	res := make(map[string]*Occurring)
 
 	buf := &bytes.Buffer{}
